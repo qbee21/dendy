@@ -3,6 +3,9 @@
 /.idea/
 /.kotlin/
 /.tmp/
+/.cxx/
+/core-emulation/.cxx/
+/externalNativeBuild/
 /build/
 **/build/
 local.properties

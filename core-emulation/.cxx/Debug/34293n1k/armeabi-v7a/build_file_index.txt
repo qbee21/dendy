@@ -1,1 +1,0 @@
-D:\KWORK\денди\core-emulation\src\main\cpp\CMakeLists.txt
