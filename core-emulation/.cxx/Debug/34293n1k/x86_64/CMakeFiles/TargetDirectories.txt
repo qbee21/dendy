@@ -1,0 +1,3 @@
+D:/KWORK/денди/core-emulation/.cxx/Debug/34293n1k/x86_64/CMakeFiles/dendy_libretro_bridge.dir
+D:/KWORK/денди/core-emulation/.cxx/Debug/34293n1k/x86_64/CMakeFiles/edit_cache.dir
+D:/KWORK/денди/core-emulation/.cxx/Debug/34293n1k/x86_64/CMakeFiles/rebuild_cache.dir

@@ -1,0 +1,44 @@
+{
+  "catalogVersion": 1,
+  "entries": [
+    {
+      "id": "builtin-sliding-blaster",
+      "title": "Big City Sliding Blaster",
+      "author": "NovaSquirrel",
+      "genre": "Shooter",
+      "fileName": "sliding_blaster.nes",
+      "sha256": "8D9E48253238E2C994D65A5C13818C8F1AAE7F37FDFCB3E48A916D9298AD620F",
+      "releaseLabel": "Zlib licensed homebrew",
+      "description": "2-player overhead shooter for NES with mouse support.",
+      "sourceUrl": "https://github.com/NovaSquirrel/SlidingBlaster",
+      "licenseName": "zlib License",
+      "licenseAsset": "licenses/sliding_blaster.LICENSE.txt"
+    },
+    {
+      "id": "builtin-dabg",
+      "title": "Double Action Blaster Guys",
+      "author": "NovaSquirrel",
+      "genre": "Platformer",
+      "fileName": "double_action_blaster_guys.nes",
+      "sha256": "ECA79B9D0B546E96C1BC73099E239539FB9C7773FF10A431BB3A9CD6763208CA",
+      "releaseLabel": "Zlib licensed homebrew",
+      "description": "Arcade-style platform action with 52 levels and a built-in level editor.",
+      "sourceUrl": "https://github.com/NovaSquirrel/DABG",
+      "licenseName": "zlib License",
+      "licenseAsset": "licenses/double_action_blaster_guys.LICENSE.txt"
+    },
+    {
+      "id": "builtin-rfk",
+      "title": "robotfindskitten",
+      "author": "Damian Yerrick",
+      "genre": "Zen Simulation",
+      "fileName": "robotfindskitten.nes",
+      "sha256": "E2E0B3E39963DC782A009F631275C9B47C39D5625435D6DDF2CCDD2162BC73FF",
+      "releaseLabel": "Zlib licensed homebrew",
+      "description": "Find kitten among a field of things that are not kitten.",
+      "sourceUrl": "https://github.com/pinobatch/rfk-nes",
+      "licenseName": "zlib License",
+      "licenseAsset": "licenses/robotfindskitten.LICENSE.txt"
+    }
+  ]
+}
