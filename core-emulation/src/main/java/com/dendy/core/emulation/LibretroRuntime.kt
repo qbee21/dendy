@@ -14,6 +14,7 @@ import java.text.DateFormat
 import java.util.Date
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.locks.LockSupport
 
 class StaticCoreProvider : CoreProvider {
     private val supportedAbis = listOf("arm64-v8a", "x86_64")
@@ -158,6 +159,9 @@ private class NativeLibretroBridge(
     private val running = AtomicBoolean(false)
     private val paused = AtomicBoolean(false)
     private val frameLoopLock = Object()
+    private val coreAccessLock = Any()
+    @Volatile
+    private var frameDurationNanos = DEFAULT_FRAME_DURATION_NANOS
     private val inputSink = NativeInputSink(inputMask) { mask ->
         val handle = nativeHandle
         if (handle != 0L) {
@@ -185,13 +189,15 @@ private class NativeLibretroBridge(
         systemDir.mkdirs()
         saveDir.mkdirs()
         stateRoot.mkdirs()
-        val loaded = NativeBindings.nativeLoadCore(
-            handle = nativeHandle,
-            corePath = installed.absolutePath,
-            systemDir = systemDir.absolutePath,
-            saveDir = saveDir.absolutePath,
-            stateDir = stateRoot.absolutePath,
-        )
+        val loaded = synchronized(coreAccessLock) {
+            NativeBindings.nativeLoadCore(
+                handle = nativeHandle,
+                corePath = installed.absolutePath,
+                systemDir = systemDir.absolutePath,
+                saveDir = saveDir.absolutePath,
+                stateDir = stateRoot.absolutePath,
+            )
+        }
         check(loaded) { "Failed to load libretro core from ${installed.absolutePath}" }
     }
 
@@ -200,12 +206,17 @@ private class NativeLibretroBridge(
         val romFile = File(romEntry.location.absolutePath)
         check(romFile.exists()) { "ROM file does not exist: ${romFile.absolutePath}" }
         saveStateDir(romEntry).mkdirs()
-        val loaded = NativeBindings.nativeLoadRom(
-            handle = nativeHandle,
-            romPath = romFile.absolutePath,
-        )
+        val loaded = synchronized(coreAccessLock) {
+            NativeBindings.nativeLoadRom(
+                handle = nativeHandle,
+                romPath = romFile.absolutePath,
+            )
+        }
         check(loaded) { "Failed to load ROM ${romFile.absolutePath}" }
         currentRom = romEntry
+        frameDurationNanos = frameDurationForFps(
+            NativeBindings.nativeGetFrameRate(nativeHandle),
+        )
         rendererHost.updateFrameInfo(
             width = NativeBindings.nativeGetFrameWidth(nativeHandle),
             height = NativeBindings.nativeGetFrameHeight(nativeHandle),
@@ -226,6 +237,7 @@ private class NativeLibretroBridge(
             audioPlayer.start()
             frameLoopThread = Thread(
                 {
+                    var nextFrameAtNanos = System.nanoTime()
                     while (running.get()) {
                         if (paused.get()) {
                             synchronized(frameLoopLock) {
@@ -233,10 +245,24 @@ private class NativeLibretroBridge(
                                     frameLoopLock.wait(25L)
                                 }
                             }
+                            nextFrameAtNanos = System.nanoTime()
                             continue
                         }
-                        NativeBindings.nativeRunFrame(nativeHandle)
+                        val sleepNanos = nextFrameAtNanos - System.nanoTime()
+                        if (sleepNanos > 0L) {
+                            LockSupport.parkNanos(sleepNanos)
+                            continue
+                        }
+                        synchronized(coreAccessLock) {
+                            NativeBindings.nativeRunFrame(nativeHandle)
+                        }
                         rendererHost.requestFrame()
+                        val frameTime = frameDurationNanos.coerceAtLeast(1L)
+                        nextFrameAtNanos += frameTime
+                        val drift = System.nanoTime() - nextFrameAtNanos
+                        if (drift > frameTime * 3) {
+                            nextFrameAtNanos = System.nanoTime()
+                        }
                     }
                 },
                 "dendy-libretro-loop",
@@ -276,10 +302,22 @@ private class NativeLibretroBridge(
 
     override fun saveState(slot: SaveSlot): SaveStateSummary? {
         val rom = currentRom ?: return null
-        val payload = NativeBindings.nativeSerialize(nativeHandle) ?: return null
+        val wasPaused = paused.get()
+        pause()
+        val payload = synchronized(coreAccessLock) {
+            NativeBindings.nativeSerialize(nativeHandle)
+        } ?: run {
+            if (!wasPaused) {
+                resume()
+            }
+            return null
+        }
         val stateFile = saveStateFile(rom, slot)
         stateFile.parentFile?.mkdirs()
         stateFile.writeBytes(payload)
+        if (!wasPaused) {
+            resume()
+        }
         return SaveStateSummary(
             romId = rom.id,
             slot = slot,
@@ -299,7 +337,21 @@ private class NativeLibretroBridge(
         if (!stateFile.exists()) {
             return
         }
-        NativeBindings.nativeUnserialize(nativeHandle, stateFile.readBytes())
+        val wasPaused = paused.get()
+        pause()
+        val restored = synchronized(coreAccessLock) {
+            NativeBindings.nativeUnserialize(nativeHandle, stateFile.readBytes())
+        }
+        if (restored) {
+            NativeBindings.nativeSetInputMask(nativeHandle, inputMask.get())
+            rendererHost.updateFrameInfo(
+                width = NativeBindings.nativeGetFrameWidth(nativeHandle),
+                height = NativeBindings.nativeGetFrameHeight(nativeHandle),
+            )
+        }
+        if (!wasPaused) {
+            resume()
+        }
     }
 
     override fun inputSink(): InputSink = inputSink
@@ -327,6 +379,16 @@ private class NativeLibretroBridge(
 
     private fun saveStateFile(romEntry: RomEntry, slot: SaveSlot): File {
         return File(saveStateDir(romEntry), "${slot.key}.state")
+    }
+
+    private fun frameDurationForFps(fps: Double): Long {
+        val normalizedFps = fps.takeIf { it.isFinite() && it > 0.0 } ?: DEFAULT_FRAME_RATE
+        return (1_000_000_000.0 / normalizedFps).toLong().coerceAtLeast(1L)
+    }
+
+    private companion object {
+        const val DEFAULT_FRAME_RATE = 60.0
+        const val DEFAULT_FRAME_DURATION_NANOS = 16_666_667L
     }
 }
 

@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -128,13 +129,13 @@ fun PlayerRoute(
             modifier = Modifier
                 .fillMaxWidth()
                 .align(Alignment.TopCenter),
-            color = Color(0x660D1116),
+            color = Color.Transparent,
             tonalElevation = 0.dp,
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 12.dp),
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -142,25 +143,25 @@ fun PlayerRoute(
                     IconButton(onClick = onBack) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
+                            contentDescription = "Назад",
                             tint = Color.White,
                         )
                     }
-                    Column {
+                    Column(modifier = Modifier.size(0.dp)) {
                         Text(
-                            text = state.entry?.metadata?.title ?: "Loading...",
-                            color = Color.White,
+                            text = state.entry?.metadata?.title ?: "Загрузка...",
+                            color = Color.Transparent,
                             style = MaterialTheme.typography.titleMedium,
                         )
                         Text(
-                            text = "Core: ${state.coreLabel}",
-                            color = Color.White.copy(alpha = 0.76f),
+                            text = "Ядро: ${state.coreLabel}",
+                            color = Color.Transparent,
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
                 }
                 IconButton(onClick = viewModel::toggleOverlay) {
-                    Icon(Icons.Default.Menu, contentDescription = "Overlay", tint = Color.White)
+                    Icon(Icons.Default.Menu, contentDescription = "Оверлей", tint = Color.White)
                 }
             }
         }
@@ -178,8 +179,8 @@ fun PlayerRoute(
                     onQuickSave = viewModel::quickSave,
                     onQuickLoad = viewModel::quickLoad,
                     modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(top = 64.dp),
+                        .align(Alignment.TopStart)
+                        .padding(start = 12.dp, top = 16.dp),
                 )
 
                 state.errorMessage?.let { message ->
@@ -197,7 +198,7 @@ fun PlayerRoute(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             Text(
-                                text = "Runtime error",
+                                text = "Ошибка эмуляции",
                                 color = Color.White,
                                 style = MaterialTheme.typography.titleSmall,
                             )
@@ -207,26 +208,17 @@ fun PlayerRoute(
                                 style = MaterialTheme.typography.bodySmall,
                             )
                             OutlinedButton(onClick = viewModel::retryLoad) {
-                                Text("Retry")
+                                Text("Повторить")
                             }
                         }
                     }
                 }
 
-                Text(
-                    text = state.lastSaveLabel,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .offset(y = (-78).dp),
-                    color = Color.White.copy(alpha = 0.84f),
-                    style = MaterialTheme.typography.bodySmall,
-                )
-
                 DpadOverlay(
                     buttonSize = 76.dp,
                     modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .padding(start = 28.dp),
+                        .align(Alignment.BottomStart)
+                        .padding(start = 8.dp, bottom = 0.dp),
                     onVirtualButton = viewModel::onVirtualButton,
                 )
 
@@ -240,7 +232,7 @@ fun PlayerRoute(
                 SystemButtonsRow(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .padding(bottom = 22.dp),
+                        .padding(bottom = 8.dp),
                     onVirtualButton = viewModel::onVirtualButton,
                 )
             }
@@ -261,15 +253,15 @@ private fun TopControls(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         OverlayPill(
-            label = if (state.status == SessionStatus.PAUSED) "Resume" else "Pause",
+            label = if (state.status == SessionStatus.PAUSED) "Продолжить" else "Пауза",
             onClick = onTogglePause,
         )
         OverlayPill(
-            label = "Save",
+            label = "Сохранить",
             onClick = onQuickSave,
         )
         OverlayPill(
-            label = "Load",
+            label = "Загрузить",
             onClick = onQuickLoad,
         )
     }
@@ -421,24 +413,24 @@ private fun SystemButtonsRow(
 ) {
     Row(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(18.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         HoldButton(
-            label = "Select",
-            width = 112.dp,
-            height = 46.dp,
-            shape = RoundedCornerShape(22.dp),
+            label = "Выбор",
+            width = 64.dp,
+            height = 28.dp,
+            shape = RoundedCornerShape(14.dp),
             borderColor = Color(0x66E8E8E8),
             backgroundColor = Color(0x22000000),
             textColor = Color(0xFFF0F0F0),
             onPressed = { onVirtualButton(VirtualButton.SELECT, it) },
         )
         HoldButton(
-            label = "Start",
-            width = 112.dp,
-            height = 46.dp,
-            shape = RoundedCornerShape(22.dp),
+            label = "Старт",
+            width = 64.dp,
+            height = 28.dp,
+            shape = RoundedCornerShape(14.dp),
             borderColor = Color(0x66E8E8E8),
             backgroundColor = Color(0x22000000),
             textColor = Color(0xFFF0F0F0),
@@ -493,7 +485,7 @@ private fun PlayerControls(
         )
         if (state.errorMessage != null) {
             OutlinedButton(onClick = onRetry) {
-                Text("Retry")
+                Text("Повторить")
             }
         }
         SystemButtonsRow(onVirtualButton = onVirtualButton)
@@ -592,7 +584,7 @@ data class PlayerUiState(
     val overlayVisible: Boolean = true,
     val isPlaceholder: Boolean = false,
     val coreLabel: String = "",
-    val lastSaveLabel: String = "No save-state yet",
+    val lastSaveLabel: String = "Сохранений пока нет",
     val errorMessage: String? = null,
 )
 
@@ -628,7 +620,7 @@ class PlayerViewModel(
                     entry = entry,
                     status = activeSession.status,
                     lastSaveLabel = dependencies.saveStateRepository.getLastSession(romId)?.timestampLabel
-                        ?: "Ready for quick save",
+                        ?: "Готово к быстрому сохранению",
                     isPlaceholder = activeSession.isPlaceholder,
                     errorMessage = null,
                 )
@@ -636,7 +628,7 @@ class PlayerViewModel(
                 mutableState.value = mutableState.value.copy(
                     status = SessionStatus.CREATED,
                     errorMessage = result.exceptionOrNull()?.message
-                        ?: "Unable to load selected ROM",
+                        ?: "Не удалось загрузить выбранную игру",
                 )
             }
         }
@@ -672,16 +664,16 @@ class PlayerViewModel(
     fun quickSave() {
         val activeSession = session ?: return
         val summary = activeSession.saveState(
-            SaveSlot("quick-1", SaveSlotType.QUICK, "Quick 1"),
+            SaveSlot("quick-1", SaveSlotType.QUICK, "Быстрое 1"),
         ) ?: return
         dependencies.saveStateRepository.upsert(summary)
-        mutableState.value = mutableState.value.copy(lastSaveLabel = "Saved ${summary.slot.label} just now")
+        mutableState.value = mutableState.value.copy(lastSaveLabel = "Сохранено: ${summary.slot.label}")
     }
 
     fun quickLoad() {
         val summary = dependencies.saveStateRepository.getSaveStates(romId).firstOrNull() ?: return
         session?.loadState(summary)
-        mutableState.value = mutableState.value.copy(lastSaveLabel = "Loaded ${summary.slot.label}")
+        mutableState.value = mutableState.value.copy(lastSaveLabel = "Загружено: ${summary.slot.label}")
     }
 
     fun onVirtualButton(button: VirtualButton, pressed: Boolean) {
@@ -709,7 +701,7 @@ class PlayerViewModel(
             )
             return
         }
-        val message = result.exceptionOrNull()?.message ?: "Unable to initialize libretro runtime"
+        val message = result.exceptionOrNull()?.message ?: "Не удалось инициализировать libretro"
         mutableState.value = mutableState.value.copy(errorMessage = message)
     }
 

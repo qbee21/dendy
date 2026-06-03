@@ -57,14 +57,14 @@ class InMemoryUserRomRepository : UserRomRepository {
             hash = "imported-${importedEntries.size + 1}",
             location = RomLocation(
                 absolutePath = uri.toString(),
-                displayName = uri.lastPathSegment ?: "Imported ROM",
+                displayName = uri.lastPathSegment ?: "Импортированный ROM",
                 source = RomSource.IMPORTED,
             ),
             metadata = GameMetadata(
-                title = "Imported ROM ${importedEntries.size + 1}",
-                genre = "Imported",
+                title = "Импортированный ROM ${importedEntries.size + 1}",
+                genre = "Импорт",
                 releaseLabel = "Queued for scanner",
-                description = "Stub import created from SAF URI until the real scanner is wired.",
+                description = "Временная запись импорта, созданная из SAF URI.",
             ),
         )
         importedEntries += next
@@ -97,13 +97,13 @@ class InMemorySaveStateRepository : SaveStateRepository {
         RomId("builtin-sliding-blaster") to mutableListOf(
             SaveStateSummary(
                 romId = RomId("builtin-sliding-blaster"),
-                slot = SaveSlot("quick-1", SaveSlotType.QUICK, "Quick 1"),
-                timestampLabel = "2m ago",
+                slot = SaveSlot("quick-1", SaveSlotType.QUICK, "Быстрое 1"),
+                timestampLabel = "2 мин назад",
             ),
             SaveStateSummary(
                 romId = RomId("builtin-sliding-blaster"),
-                slot = SaveSlot("resume", SaveSlotType.LAST_SESSION, "Resume"),
-                timestampLabel = "Last session",
+                slot = SaveSlot("resume", SaveSlotType.LAST_SESSION, "Продолжить"),
+                timestampLabel = "Последний сеанс",
             ),
         ),
     )

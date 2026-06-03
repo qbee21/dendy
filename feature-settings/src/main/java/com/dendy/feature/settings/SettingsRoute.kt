@@ -48,9 +48,9 @@ fun SettingsRoute(
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text("Settings", style = MaterialTheme.typography.headlineMedium)
+        Text("Настройки", style = MaterialTheme.typography.headlineMedium)
         Text(
-            "Video, audio, input layout and performance presets already have dedicated state objects.",
+            "Настройки видео, звука и производительности уже вынесены в отдельные состояния.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
@@ -64,33 +64,49 @@ fun SettingsRoute(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("Audio enabled")
+                    Text("Звук")
                     Switch(checked = state.audioEnabled, onCheckedChange = viewModel::toggleAudio)
                 }
 
-                Text("Video filter")
+                Text("Видеофильтр")
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     VideoFilter.entries.forEach { filter ->
                         FilterChip(
                             selected = state.videoFilter == filter,
                             onClick = { viewModel.selectFilter(filter) },
-                            label = { Text(filter.name.replace('_', ' ')) },
+                            label = { Text(filter.toRussianLabel()) },
                         )
                     }
                 }
 
-                Text("Performance preset")
+                Text("Режим производительности")
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     PerformancePreset.entries.forEach { preset ->
                         FilterChip(
                             selected = state.performancePreset == preset,
                             onClick = { viewModel.selectPreset(preset) },
-                            label = { Text(preset.name) },
+                            label = { Text(preset.toRussianLabel()) },
                         )
                     }
                 }
             }
         }
+    }
+}
+
+private fun VideoFilter.toRussianLabel(): String {
+    return when (this) {
+        VideoFilter.PIXEL_PERFECT -> "Пиксельный"
+        VideoFilter.SOFT_CRT -> "Мягкий CRT"
+        VideoFilter.SHARP_LCD -> "Резкий LCD"
+    }
+}
+
+private fun PerformancePreset.toRussianLabel(): String {
+    return when (this) {
+        PerformancePreset.BATTERY -> "Экономия"
+        PerformancePreset.BALANCED -> "Сбалансированный"
+        PerformancePreset.PERFORMANCE -> "Производительность"
     }
 }
 

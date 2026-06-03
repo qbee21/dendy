@@ -9,6 +9,7 @@ import com.dendy.core.model.RomLocation
 import com.dendy.core.model.RomSource
 import org.json.JSONObject
 import java.io.File
+import java.security.MessageDigest
 
 private const val BUILT_IN_ROOT = "builtins"
 private const val BUILT_IN_ROMS_DIR = "roms"
@@ -68,7 +69,7 @@ class AssetBuiltInCatalogRepository(
         val entries = root.getJSONArray("entries")
         val builtInRoot = File(context.filesDir, BUILT_IN_ROOT).resolve(BUILT_IN_ROMS_DIR)
 
-        return buildList(entries.length()) {
+        val manifestEntries = buildList(entries.length()) {
             repeat(entries.length()) { index ->
                 val item = entries.getJSONObject(index)
                 val fileName = item.getString("fileName")
@@ -86,13 +87,42 @@ class AssetBuiltInCatalogRepository(
                             title = item.getString("title"),
                             genre = item.getString("genre"),
                             releaseLabel = item.getString("releaseLabel"),
-                            coverPath = item.optString("coverAsset", null)?.takeIf { it.isNotBlank() },
+                            coverPath = item.optString("coverAsset").takeIf { it.isNotBlank() },
                             description = item.getString("description"),
                         ),
                     ),
                 )
             }
         }
+
+        val managedFiles = manifestEntries.map { it.fileName.lowercase() }.toHashSet()
+        val discoveredEntries = builtInRoot.listFiles().orEmpty()
+            .asSequence()
+            .filter { it.isFile && it.extension.lowercase() in setOf("nes", "zip") }
+            .filterNot { it.name.lowercase() in managedFiles }
+            .sortedBy { it.name.lowercase() }
+            .map { file ->
+                val displayName = normalizeRomTitle(file.nameWithoutExtension)
+                RomEntry(
+                    id = RomId("builtin-auto-${slugify(file.nameWithoutExtension)}"),
+                    fileName = file.name,
+                    hash = sha256(file),
+                    location = RomLocation(
+                        absolutePath = file.absolutePath,
+                        displayName = displayName,
+                        source = RomSource.BUILT_IN,
+                    ),
+                    metadata = GameMetadata(
+                        title = displayName,
+                        genre = "Не указан",
+                        releaseLabel = "Auto-discovered from built-in ROM folder",
+                        description = "ROM автоматически найден в папке встроенных игр.",
+                    ),
+                )
+            }
+            .toList()
+
+        return manifestEntries + discoveredEntries
     }
 }
 
@@ -107,4 +137,56 @@ class AssetRomScanner(
             duplicateHashes = 0,
         )
     }
+}
+
+private fun slugify(value: String): String {
+    return value
+        .lowercase()
+        .replace(Regex("[^a-z0-9]+"), "-")
+        .trim('-')
+        .ifBlank { "rom" }
+}
+
+private fun normalizeRomTitle(rawTitle: String): String {
+    val cleaned = rawTitle
+        .replace(Regex("^\\d+[_\\-. ]+"), "")
+        .replace("onlain-igrok.rf_", "", ignoreCase = true)
+        .replace("onlain igrok rf", "", ignoreCase = true)
+        .replace(Regex("\\[[^\\]]*]"), "")
+        .replace(Regex("\\([^)]*(?:rus|u|e|j|hack|pirate|proto|beta|!|p)[^)]*\\)", RegexOption.IGNORE_CASE), "")
+        .replace(Regex("\\bby\\b.*$", RegexOption.IGNORE_CASE), "")
+        .replace(Regex("\\b(?:rus|t-rus|onlain|igrok|rf|hack|shedevr|multisoft|team|p1trus)\\b", RegexOption.IGNORE_CASE), "")
+        .replace('_', ' ')
+        .replace('-', ' ')
+        .replace('.', ' ')
+        .replace(Regex("\\s+"), " ")
+        .trim()
+
+    val titleCased = cleaned
+        .split(' ')
+        .filter { it.isNotBlank() }
+        .joinToString(" ") { token ->
+            when (token.lowercase()) {
+                "i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x" -> token.uppercase()
+                "n" -> "n"
+                else -> token.replaceFirstChar { char ->
+                    if (char.isLowerCase()) char.titlecase() else char.toString()
+                }
+            }
+        }
+
+    return titleCased.ifBlank { rawTitle }
+}
+
+private fun sha256(file: File): String {
+    val digest = MessageDigest.getInstance("SHA-256")
+    file.inputStream().buffered().use { input ->
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        while (true) {
+            val read = input.read(buffer)
+            if (read <= 0) break
+            digest.update(buffer, 0, read)
+        }
+    }
+    return digest.digest().joinToString("") { "%02X".format(it) }
 }

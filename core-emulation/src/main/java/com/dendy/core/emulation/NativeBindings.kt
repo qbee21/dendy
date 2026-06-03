@@ -42,6 +42,8 @@ internal object NativeBindings {
 
     external fun nativeGetFrameHeight(handle: Long): Int
 
+    external fun nativeGetFrameRate(handle: Long): Double
+
     external fun nativeGetSampleRate(handle: Long): Int
 
     external fun nativeCopyFrame(

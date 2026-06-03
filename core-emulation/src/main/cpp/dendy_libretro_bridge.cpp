@@ -659,6 +659,15 @@ Java_com_dendy_core_emulation_NativeBindings_nativeGetSampleRate(JNIEnv*, jobjec
     return static_cast<jint>(backend->av_info.timing.sample_rate);
 }
 
+extern "C" JNIEXPORT jdouble JNICALL
+Java_com_dendy_core_emulation_NativeBindings_nativeGetFrameRate(JNIEnv*, jobject, jlong handle) {
+    auto* backend = FromHandle(handle);
+    if (backend == nullptr) {
+        return 0.0;
+    }
+    return static_cast<jdouble>(backend->av_info.timing.fps);
+}
+
 extern "C" JNIEXPORT jboolean JNICALL
 Java_com_dendy_core_emulation_NativeBindings_nativeCopyFrame(
     JNIEnv* env,

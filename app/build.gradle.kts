@@ -18,6 +18,12 @@ android {
         versionName = "0.1.0"
     }
 
+    buildTypes {
+        release {
+            signingConfig = signingConfigs.getByName("debug")
+        }
+    }
+
     buildFeatures {
         compose = true
     }
